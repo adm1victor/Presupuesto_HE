@@ -136,6 +136,11 @@
         <option value="USD">Dólares (USD)</option>
       </select>
     </div>
+    <!-- NUEVO: Input para imagen institucional -->
+    <div class="line" style="margin-top: 10px;">
+      <label for="logoInput" style="display: inline; font-size: 0.9rem; color: #555;">Imagen Institucional:</label>
+      <input type="file" id="logoInput" accept="image/*" style="width: auto; padding: 4px; margin-left: 10px;">
+    </div>
   </div>
 </header>
 
@@ -385,6 +390,9 @@
   let itemHistory = [];
   let currentCurrency = 'ARS'; // Moneda actual
   let localStorageAvailable = checkLocalStorage();
+  
+  // NUEVO: Variable para almacenar la imagen institucional
+  let logoImage = null;
 
   // Cargar datos desde localStorage si está disponible
   if (localStorageAvailable) {
@@ -785,7 +793,7 @@
     }
   });
 
-  // Exportar a PDF - MEJORADO
+  // Exportar a PDF - MEJORADO CON IMAGEN
   $('#exportPDF').addEventListener('click', () => {
     if (items.length === 0) {
       showNotification('No hay ítems para exportar', 'warning');
@@ -805,6 +813,11 @@
       // Configuración de fuentes
       doc.setFont('helvetica');
       
+      // NUEVO: Agregar imagen institucional al encabezado
+      if (logoImage) {
+        doc.addImage(logoImage, 'PNG', 15, 10, 50, 20); // (x, y, ancho, alto)
+      }
+      
       // Función para verificar si necesitamos agregar una nueva página
       function checkPageSpace(yPosition, requiredSpace = 20) {
         const pageHeight = doc.internal.pageSize.height;
@@ -819,20 +832,20 @@
       
       // Título
       doc.setFontSize(20);
-      doc.text('PRESUPUESTO', 105, 25, { align: 'center' });
+      doc.text('PRESUPUESTO', 105, 45, { align: 'center' }); // Ajustado para dejar espacio para la imagen
       
       // Datos de la empresa
       doc.setFontSize(16);
       doc.setTextColor(14, 98, 176); // Color azul #0e62b0
-      doc.text('HIDRÁULICA ENSENADA', 105, 35, { align: 'center' });
+      doc.text('HIDRÁULICA ENSENADA', 105, 55, { align: 'center' });
       doc.setFontSize(12);
       doc.setTextColor(102, 102, 102); // Color gris #666666
-      doc.text('Conexiones Hidráulicas y Neumáticas', 105, 42, { align: 'center' });
+      doc.text('Conexiones Hidráulicas y Neumáticas', 105, 62, { align: 'center' });
       doc.setTextColor(0, 0, 0); // Restaurar color negro
       
       // Datos del presupuesto
       doc.setFontSize(12);
-      let yPosition = 55; // Ajustado para dejar espacio después de los datos de la empresa
+      let yPosition = 75; // Ajustado para dejar espacio después de los datos de la empresa
       
       // Verificar espacio para los datos del presupuesto
       yPosition = checkPageSpace(yPosition, 120); // Espacio necesario para los datos del presupuesto
@@ -1213,6 +1226,19 @@
     
     computeTotals();
   }
+
+  // NUEVO: Evento para cargar imagen institucional
+  $('#logoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        logoImage = event.target.result;
+        showNotification('Imagen institucional cargada correctamente');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 
   // Init
   (function init(){

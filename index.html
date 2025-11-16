@@ -1,1275 +1,666 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>PRESUPUESTO</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#fff;color:#222;}
-  header{display:flex;justify-content:flex-end;align-items:flex-start;border-bottom:2px solid #0e62b0;padding-bottom:10px;margin-bottom:16px;}
-  .company{font-weight:bold;color:#0e62b0;margin-bottom:15px;}
-  .company div:first-child{font-size:1.4rem;}
-  .doc-meta{text-align:right;}
-  .doc-meta .line{margin:2px 0;}
-  h1{text-align:center;color:#0e62b0;margin:16px 0;}
-  .card{border:1px solid #ccc;border-radius:8px;padding:12px;margin:10px 0;background:#fafafa;}
-  .card h2{margin:0 0 8px;color:#0e62b0;font-size:1.05rem;}
-  label{display:block;font-size:0.9rem;color:#555;margin-bottom:2px;}
-  input,select,textarea{width:100%;padding:6px;border:1px solid #ccc;border-radius:6px;margin-bottom:4px;}
-  textarea{min-height:60px;}
-  table{width:100%;border-collapse:collapse;margin-top:8px;}
-  th,td{border:1px solid #ccc;padding:6px;}
-  th{background:#f0f0f0;}
-  tfoot td{font-weight:bold;}
-  tfoot tr.total td{background:#e8f4ff;font-size:1.05rem;}
-  .right{text-align:right;}
-  .btn{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;margin:2px;background:#e9eef6;}
-  .btn-primary{background:#0e62b0;color:#fff;}
-  .btn-danger{background:#b00020;color:#fff;}
-  .btn-success{background:#28a745;color:#fff;}
-  .btn:hover{opacity:0.95;}
-  .actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
-  .cliente-box{border:1px solid #ccc;border-radius:6px;padding:8px;margin-bottom:10px;line-height:1.2;}
-  .editable{border:1px dashed #ccc;border-radius:6px;padding:6px;min-height:60px;}
-  .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-  .small-actions{display:flex;gap:6px;align-items:center;}
-  .budget-number{font-size:1.2rem;font-weight:bold;color:#0e62b0;text-align:center;margin:20px 0;padding:10px;background:#f8f9fa;border-radius:6px;}
-  .export-actions{display:flex;gap:10px;justify-content:center;margin:20px 0;flex-wrap:wrap;}
-  
-  /* Mejoras de diseño */
-  .notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    max-width: 300px;
-  }
-  
-  .notification.show {
-    opacity: 1;
-  }
-  
-  .notification.error {
-    background-color: #f44336;
-  }
-  
-  .notification.warning {
-    background-color: #ff9800;
-  }
-  
-  /* Selector de moneda */
-  .currency-selector {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  
-  .currency-selector select {
-    width: auto;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background-color: #fff;
-    cursor: pointer;
-  }
-  
-  /* Responsive improvements */
-  @media (max-width: 768px) {
-    header {
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    
-    .doc-meta {
-      margin-top: 10px;
-      text-align: center;
-    }
-    
-    .actions {
-      flex-direction: column;
-    }
-    
-    .actions input, .actions select, .actions button {
-      width: 100%;
-    }
-    
-    table {
-      font-size: 0.8rem;
-    }
-    
-    th, td {
-      padding: 4px;
-    }
-    
-    .export-actions {
-      flex-direction: column;
-    }
-    
-    .currency-selector {
-      justify-content: center;
-    }
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>PRESUPUESTO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Librerías necesarias para PDF y Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin:20px; background:#fff; color:#222; }
+    header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0e62b0; padding-bottom:10px; margin-bottom:16px; }
+    .logo-container { width:200px; height:80px; display:flex; justify-content:flex-end; align-items:flex-start; }
+    .logo-image { max-width:200px; max-height:80px; object-fit:contain; }
+    .company { font-weight:bold; color:#0e62b0; margin-bottom:8px;}
+    .currency-selector { margin-top:10px; }
+    h1 { text-align:center; color:#0e62b0; margin:16px 0; }
+    .cliente-container { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px; }
+    .cliente-box, .card { border:1px solid #ccc; border-radius:8px; padding:12px; margin:10px 0; background:#fafafa; }
+    .cliente-field label { font-weight:bold; color:#555; margin-bottom:4px; font-size:0.9rem;}
+    .cliente-field input { padding:8px; border:1px solid #ccc; border-radius:6px;}
+    .actions { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+    .editable { border: 1px dashed #ccc; border-radius:6px; padding:6px; min-height:60px;}
+    table { width:100%; border-collapse:collapse; margin-top:8px;}
+    th, td { border:1px solid #ccc; padding:6px;}
+    th { background:#f0f0f0;}
+    .right { text-align:right; }
+    .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; background:#e9eef6; }
+    .btn-primary { background:#0e62b0; color:#fff;}
+    .btn-danger { background:#b00020; color:#fff;}
+    .btn-success { background:#28a745; color:#fff;}
+    .btn-warning { background:#ffc107; color:#000;}
+    .export-actions { display:flex; gap:10px; justify-content:center; margin:20px 0;}
+    .logo-selector { margin-top:10px; padding:10px; border:1px dashed #ccc; border-radius:6px; background:#f9f9f9;}
+    .logo-selector label { font-size:0.9rem; color:#555;}
+    .edit-input { width:100%; padding:4px; border:1px solid #0e62b0; border-radius:4px; }
+    .discount-container { display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+    .iva-container { display:flex; align-items:center; justify-content:flex-end; gap:10px; }
+    .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4); }
+    .modal-content { background-color:#fefefe; margin:15% auto; padding:20px; border:1px solid #888; width:80%; max-width:500px; border-radius:8px; }
+    .close { color:#aaa; float:right; font-size:28px; font-weight:bold; cursor:pointer; }
+    .close:hover { color:black; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:bold; }
+    .form-group input, .form-group select { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+  </style>
 </head>
 <body>
-<!-- Notificaciones -->
+
+<!-- Notificación -->
 <div id="notification" class="notification"></div>
 
-<header>
-  <div class="doc-meta">
-    <div class="line"><strong>Presupuesto:</strong> <span id="budgetId">#001</span></div>
-    <div class="line"><strong>Fecha:</strong> <span id="fechaEmitida">—</span></div>
-    <div class="line"><strong>Usuario:</strong> <span id="userDisplay">—</span></div>
-    <div class="currency-selector">
-      <strong>Moneda:</strong>
-      <select id="currencySelect">
-        <option value="ARS">Pesos Argentinos (ARS)</option>
-        <option value="USD">Dólares (USD)</option>
+<!-- Modal para edición de ítems -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Editar Ítem</h2>
+    <div class="form-group">
+      <label for="editCant">Cantidad:</label>
+      <input type="number" id="editCant" min="1">
+    </div>
+    <div class="form-group">
+      <label for="editDesc">Descripción:</label>
+      <input type="text" id="editDesc">
+    </div>
+    <div class="form-group">
+      <label for="editTipo">Tipo:</label>
+      <select id="editTipo">
+        <option value="bien">Bien</option>
+        <option value="servicio">Servicio</option>
       </select>
     </div>
-    <!-- NUEVO: Input para imagen institucional -->
-    <div class="line" style="margin-top: 10px;">
-      <label for="logoInput" style="display: inline; font-size: 0.9rem; color: #555;">Imagen Institucional:</label>
-      <input type="file" id="logoInput" accept="image/*" style="width: auto; padding: 4px; margin-left: 10px;">
+    <div class="form-group">
+      <label for="editUnit">Precio Unitario:</label>
+      <input type="number" id="editUnit" step="0.01" min="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="cancelEdit">Cancelar</button>
+      <button class="btn btn-primary" id="saveEdit">Guardar</button>
     </div>
   </div>
+</div>
+
+<header>
+  <div id="companyInfo">
+    <div class="company">EMPRESA DEMO S.R.L.</div>
+    <div style="font-weight:normal;color:#666;">Servicios y soluciones industriales</div>
+  </div>
+  <div class="currency-selector">
+    <strong>Moneda:</strong>
+    <select id="currencySelect">
+      <option value="ARS">Pesos Argentinos ARS</option>
+      <option value="USD">Dólares USD</option>
+    </select>
+  </div>
+  <div class="logo-selector">
+    <label for="logoInput">Logo institucional</label>
+    <input type="file" id="logoInput" accept="image/*"/>
+    <button class="btn btn-danger" id="removeLogo" style="display:none;">Eliminar logo</button>
+  </div>
+  <div class="logo-container" id="logoContainer"></div>
 </header>
 
-<h1>PRESUPUESTO</h1>
+<h1>PRESUPUESTO N° <span id="budgetIdEl">1</span></h1>
 
-<!-- Datos cliente estilo factura -->
-<section class="cliente-box">
-  <div class="company">
-    <div>HIDRÁULICA ENSENADA</div>
-    <div style="font-weight:normal;color:#666;">Conexiones Hidráulicas y Neumáticas</div>
+<!-- Datos cliente en dos columnas -->
+<section class="cliente-container">
+  <div class="cliente-box">
+    <div class="cliente-field"><label>Razón social</label> <input id="razon" placeholder="Ej. Cliente SRL"></div>
+    <div class="cliente-field"><label>CUIT</label> <input id="cuit" placeholder="Ej. 30-12345678-9"></div>
+    <div class="cliente-field"><label>Dirección</label> <input id="direccion" placeholder="Ej. Calle 123"></div>
+    <div class="cliente-field"><label>Contacto</label> <input id="contacto" placeholder="Ej. Juan Pérez"></div>
   </div>
-  
-  <h2>Datos del cliente</h2>
-  <label>Razón social</label><input id="razon" placeholder="Ej.: Cliente SRL">
-  <label>CUIT</label><input id="cuit" placeholder="Ej.: 30-12345678-9">
-  <label>Dirección</label><input id="direccion" placeholder="Ej.: Almafuerte 386, Ensenada">
-  <label>Contacto</label><input id="contacto" placeholder="Ej.: Juan Pérez">
-  <label>Teléfono</label><input id="telefono" placeholder="Ej.: +54 221 460 0760">
-  <label>Email</label><input id="mail" placeholder="Ej.: cliente@correo.com">
-  <label>Usuario (editable)</label><input id="usuario" placeholder="Ej.: Karina">
-  <button class="btn" id="aplicarUsuario">Aplicar usuario</button>
+  <div class="cliente-box">
+    <div class="cliente-field"><label>Teléfono</label> <input id="telefono" placeholder="Ej. 54 221 460 0760"></div>
+    <div class="cliente-field"><label>Email</label> <input id="mail" placeholder="Ej. client@correo.com"></div>
+    <div class="cliente-field"><label>Usuario</label> <input id="usuario" placeholder="Ej. Karina"></div>
+    <div class="cliente-field"><label>Fecha</label> <span id="fechaEmitida"></span></div>
+  </div>
 </section>
 
 <section class="card">
   <h2>Propuesta técnica</h2>
-  <div class="actions">
-    <button class="btn" data-toggle="desc">Descripción</button>
-    <button class="btn" data-toggle="diag">Diagnóstico</button>
-    <button class="btn" data-toggle="tareas">Tareas</button>
-    <button class="btn" data-toggle="notas">Notas</button>
-  </div>
-
-  <div id="descBox" style="display:none;">
-    <div class="section-title">
-      <label>Descripción</label>
-      <div class="small-actions">
-        <button class="btn" data-clear="descArea">Borrar texto</button>
-      </div>
-    </div>
-    <div id="descArea" class="editable" contenteditable="true" spellcheck="true"></div>
-  </div>
-
-  <div id="diagBox" style="display:none;">
-    <div class="section-title">
-      <label>Diagnóstico</label>
-      <div class="small-actions">
-        <button class="btn" data-clear="diagArea">Borrar texto</button>
-      </div>
-    </div>
-    <div id="diagArea" class="editable" contenteditable="true" spellcheck="true"></div>
-  </div>
-
-  <div id="tareasBox" style="display:none;">
-    <div class="section-title">
-      <label>Tareas</label>
-      <div class="small-actions">
-        <button class="btn" data-clear="tareasArea">Borrar texto</button>
-      </div>
-    </div>
-    <div id="tareasArea" class="editable" contenteditable="true" spellcheck="true"></div>
-  </div>
-
-  <div id="notasBox" style="display:none;">
-    <div class="section-title">
-      <label>Notas</label>
-      <div class="small-actions">
-        <button class="btn" data-clear="notasArea">Borrar texto</button>
-      </div>
-    </div>
-    <div id="notasArea" class="editable" contenteditable="true" spellcheck="true"></div>
-  </div>
+  <div class="editable" id="descArea" contenteditable="true" spellcheck="true">Descripción del servicio, detalles técnicos, etc.</div>
+  <div class="editable" id="diagArea" contenteditable="true" spellcheck="true">Diagnóstico, contexto o análisis previo...</div>
+  <div class="editable" id="tareasArea" contenteditable="true" spellcheck="true">Tareas previstas, trabajos a realizar...</div>
+  <div class="editable" id="notasArea" contenteditable="true" spellcheck="true">Notas, comentarios adicionales...</div>
 </section>
-
 <section class="card">
   <h2>Propuesta económica</h2>
   <div class="actions">
     <input id="itemCant" type="number" placeholder="Cant." style="width:60px;">
-    <input id="itemDesc" type="text" placeholder="Descripción" style="flex:2;min-width:250px;" list="itemSuggestions">
-    <select id="itemTipo" style="width:90px;">
-      <option value="bien">Bien</option>
-      <option value="servicio">Servicio</option>
-    </select>
+    <input id="itemDesc" type="text" placeholder="Descripción" style="flex:2;min-width:150px;">
+    <select id="itemTipo" style="width:90px;"><option value="bien">Bien</option><option value="servicio">Servicio</option></select>
     <input id="itemUnit" type="number" placeholder="Precio unitario" step="0.01" style="width:100px;">
     <button class="btn btn-primary" id="btnAdd">Agregar</button>
   </div>
-  
-  <!-- Lista de sugerencias para autocompletar -->
-  <datalist id="itemSuggestions"></datalist>
-
   <table>
     <thead>
       <tr><th>Cant.</th><th>Descripción</th><th>Tipo</th><th class="right">Unitario</th><th class="right">Subtotal</th><th>Acciones</th></tr>
     </thead>
     <tbody id="itemsBody"></tbody>
     <tfoot>
-      <tr><td colspan="4" class="right">Subtotal</td><td id="subtotal" class="right">$0.00</td><td></td></tr>
-      <tr><td colspan="4" class="right">Prenda</td><td id="prendaVal" class="right">$0.00</td><td>(fija en 0)</td></tr>
+      <tr><td colspan="4" class="right">Subtotal</td><td class="right" id="subtotal">0.00</td><td></td></tr>
       <tr>
-        <td colspan="4" class="right">Descuento / Bonificación</td>
-        <td id="descVal" class="right">$0.00</td>
-        <td>
-          <input id="descPct" type="number" placeholder="% desc" step="0.01" style="width:100px;">
-          <button class="btn" id="applyDesc">Aplicar</button>
+        <td colspan="4" class="right discount-container">
+          Descuento
+          <input type="number" id="discountPercent" min="0" max="100" step="0.1" value="0" style="width:60px;">% 
+          <button class="btn btn-warning" id="applyDiscount">Aplicar</button>
         </td>
+        <td class="right" id="discountAmount">0.00</td>
+        <td></td>
       </tr>
+      <tr><td colspan="4" class="right">Subtotal con descuento</td><td class="right" id="subtotalWithDiscount">0.00</td><td></td></tr>
       <tr>
-        <td colspan="4" class="right">IVA</td>
-        <td id="ivaVal" class="right">$0.00</td>
-        <td>
-          <select id="ivaSelect" style="width:100px;">
-            <option value="21">21%</option>
-            <option value="10.5">10.5%</option>
-          </select>
-          <span id="ivaPctView" style="margin-left:6px;color:#555;">(21%)</span>
+        <td colspan="4" class="right iva-container">
+          IVA
+          <button class="btn btn-primary" id="toggleIva">21%</button>
         </td>
+        <td class="right" id="ivaVal">0.00</td>
+        <td></td>
       </tr>
-      <tr class="total"><td colspan="4" class="right">TOTAL</td><td id="totalVal" class="right">$0.00</td><td></td></tr>
+      <tr class="total"><td colspan="4" class="right">TOTAL</td><td class="right" id="totalVal">0.00</td><td></td></tr>
     </tfoot>
   </table>
 </section>
 
-<!-- Número de presupuesto en texto -->
-<div class="budget-number">
-  Presupuesto N° <span id="budgetNumberText">001</span> - Total: <span id="budgetTotalText">$0.00</span>
-</div>
-
-<!-- Nuevos apartados editables -->
 <section class="card">
   <h2>PLAZOS DE ENTREGA</h2>
-  <div class="section-title">
-    <label>Plazos de entrega</label>
-    <div class="small-actions">
-      <button class="btn" data-clear="deliveryTerms">Borrar texto</button>
-    </div>
-  </div>
-  <div id="deliveryTerms" class="editable" contenteditable="true" spellcheck="true"></div>
+  <div class="editable" id="deliveryTerms" contenteditable="true" spellcheck="true">Ej: 15 días hábiles luego de la orden...</div>
 </section>
-
 <section class="card">
   <h2>CONDICIÓN DE PAGO</h2>
-  <div class="section-title">
-    <label>Condición de pago</label>
-    <div class="small-actions">
-      <button class="btn" data-clear="paymentTerms">Borrar texto</button>
-    </div>
-  </div>
-  <div id="paymentTerms" class="editable" contenteditable="true" spellcheck="true"></div>
+  <div class="editable" id="paymentTerms" contenteditable="true" spellcheck="true">Ej: transferencia, 50% anticipo, saldo a entrega...</div>
 </section>
-
 <section class="card">
   <h2>NOTA</h2>
-  <div class="section-title">
-    <label>Notas adicionales</label>
-    <div class="small-actions">
-      <button class="btn" data-clear="notes">Borrar texto</button>
-    </div>
-  </div>
-  <div id="notes" class="editable" contenteditable="true" spellcheck="true"></div>
+  <div class="editable" id="notes" contenteditable="true" spellcheck="true">Condiciones, vigencia, etc.</div>
 </section>
 
-<!-- Acciones finales -->
 <div class="export-actions">
-  <button class="btn btn-success" id="closeBudget">Cerrar Presupuesto</button>
-  <button class="btn btn-primary" id="exportExcel">Exportar Excel</button>
   <button class="btn btn-primary" id="exportPDF">Exportar PDF</button>
-  <button class="btn btn-primary" id="shareWhatsApp">Compartir WhatsApp</button>
-  <button class="btn btn-primary" id="viewBudgets">Ver Presupuestos Guardados</button>
+  <button class="btn btn-success" id="exportExcel">Exportar Excel</button>
+  <button class="btn btn-primary" id="sharePDF">Compartir PDF</button>
+  <button class="btn btn-success" id="shareExcel">Compartir Excel</button>
+  <button class="btn btn-danger" id="closeBudget">Cerrar Presupuesto</button>
+  <button class="btn btn-warning" id="restoreBudget" style="display:none;">Recuperar Anterior</button>
 </div>
 
-<!-- Modal para ver presupuestos guardados -->
-<div id="budgetsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow:auto;">
-  <div style="background:white; margin:50px auto; padding:20px; width:90%; max-width:800px; border-radius:8px; position:relative;">
-    <span id="closeModal" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer;">&times;</span>
-    <h2>Presupuestos Guardados</h2>
-    <div id="budgetsList"></div>
-  </div>
-</div>
-
+<!-- SCRIPTS PRINCIPALES -->
 <script>
-  // Utilidades
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  
-  // Función de formateo con moneda
-  const fmt = (n, currency) => {
-    const num = Number(n || 0).toFixed(2);
-    return currency === 'USD' ? `U$D ${num}` : `$ ${num}`;
-  };
-  
-  const parseNum = v => { 
-    const n = Number(String(v).replace(',','.').replace(/\$|U\$D/g, '').trim()); 
-    return isNaN(n) ? 0 : n; 
-  };
+let items = [];
+let currentCurrency = "ARS";
+let logoImageData = null;
+let discountPercentage = 0;
+let ivaPercentage = 0.21;
+let editingIndex = -1;
 
-  // Sistema de notificaciones
-  function showNotification(message, type = 'success') {
-    const notification = $('#notification');
-    notification.textContent = message;
-    notification.className = 'notification show';
-    
-    if (type === 'error') {
-      notification.classList.add('error');
-    } else if (type === 'warning') {
-      notification.classList.add('warning');
-    }
-    
-    setTimeout(() => {
-      notification.classList.remove('show');
-    }, 3000);
+let budgetId = 1;
+let nextBudgetId = 2;
+let lastClosedBudget = null;
+const budgetIdEl = document.getElementById("budgetIdEl");
+
+function fmt(number, currency) {
+  let num = Number(number || 0).toFixed(2);
+  return (currency === "USD" ? "U$D " : "$ ") + num;
+}
+
+function renderItems() {
+  const tbody = document.getElementById("itemsBody");
+  tbody.innerHTML = "";
+  let subtotal = 0;
+  items.forEach((item, idx) => {
+    let sub = item.cant * item.unit;
+    subtotal += sub;
+    let tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.cant}</td>
+      <td>${item.desc}</td>
+      <td>${item.tipo}</td>
+      <td class="right">${fmt(item.unit, currentCurrency)}</td>
+      <td class="right">${fmt(sub, currentCurrency)}</td>
+      <td>
+        <button class="btn btn-primary" onclick="editItem(${idx})">Editar</button>
+        <button class="btn btn-danger" onclick="delItem(${idx})">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateTotals(subtotal);
+}
+
+function updateTotals(subtotal) {
+  document.getElementById("subtotal").textContent = fmt(subtotal, currentCurrency);
+  
+  let discountAmount = subtotal * (discountPercentage / 100);
+  document.getElementById("discountAmount").textContent = fmt(discountAmount, currentCurrency);
+  
+  let subtotalWithDiscount = subtotal - discountAmount;
+  document.getElementById("subtotalWithDiscount").textContent = fmt(subtotalWithDiscount, currentCurrency);
+  
+  let iva = subtotalWithDiscount * ivaPercentage;
+  document.getElementById("ivaVal").textContent = fmt(iva, currentCurrency);
+  
+  let total = subtotalWithDiscount + iva;
+  document.getElementById("totalVal").textContent = fmt(total, currentCurrency);
+}
+
+function addItem() {
+  let cant = parseInt(document.getElementById("itemCant").value);
+  let desc = document.getElementById("itemDesc").value.trim();
+  let tipo = document.getElementById("itemTipo").value;
+  let unit = parseFloat(document.getElementById("itemUnit").value);
+  if (!desc || isNaN(cant) || isNaN(unit) || cant<=0 || unit<=0) {
+    alert("Complete todos los campos correctamente.");
+    return;
   }
+  items.push({cant, desc, tipo, unit});
+  renderItems();
+  document.getElementById("itemCant").value="";
+  document.getElementById("itemDesc").value="";
+  document.getElementById("itemUnit").value="";
+}
 
-  // Verificar localStorage
-  function checkLocalStorage() {
+function delItem(idx) {
+  if (confirm("¿Eliminar este ítem?")) {
+    items.splice(idx,1);
+    renderItems();
+  }
+}
+
+function editItem(idx) {
+  editingIndex = idx;
+  const item = items[idx];
+  document.getElementById("editCant").value = item.cant;
+  document.getElementById("editDesc").value = item.desc;
+  document.getElementById("editTipo").value = item.tipo;
+  document.getElementById("editUnit").value = item.unit;
+  document.getElementById("editModal").style.display = "block";
+}
+
+// LOGO
+document.getElementById("logoInput").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      logoImageData = evt.target.result;
+      displayLogo();
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+document.getElementById("removeLogo").addEventListener("click", function() {
+  if (confirm("¿Eliminar el logo institucional?")) {
+    logoImageData = null;
+    document.getElementById("logoContainer").innerHTML="";
+    document.getElementById("companyInfo").style.display = "block";
+    this.style.display="none";
+  }
+});
+
+function displayLogo(){
+  const cont = document.getElementById("logoContainer");
+  cont.innerHTML="";
+  if(logoImageData){
+    const img = document.createElement("img");
+    img.src=logoImageData;
+    img.className="logo-image";
+    img.alt="Logo Institucional";
+    cont.appendChild(img);
+    document.getElementById("removeLogo").style.display="inline-block";
+    document.getElementById("companyInfo").style.display = "none";
+  } else {
+    document.getElementById("companyInfo").style.display = "block";
+    document.getElementById("removeLogo").style.display = "none";
+  }
+}
+
+// CURRENCY
+document.getElementById("currencySelect").addEventListener("change", function(e) {
+  currentCurrency = e.target.value;
+  renderItems();
+});
+
+// FECHA
+function setFecha() {
+  document.getElementById("fechaEmitida").textContent = (new Date()).toLocaleDateString("es-AR");
+}
+setFecha();
+
+// ADD ITEM
+document.getElementById("btnAdd").onclick = addItem;
+
+// DISCOUNT
+document.getElementById("applyDiscount").onclick = function() {
+  discountPercentage = parseFloat(document.getElementById("discountPercent").value) || 0;
+  if (discountPercentage < 0) discountPercentage = 0;
+  if (discountPercentage > 100) discountPercentage = 100;
+  document.getElementById("discountPercent").value = discountPercentage;
+  renderItems();
+};
+
+// IVA TOGGLE
+document.getElementById("toggleIva").onclick = function() {
+  if (ivaPercentage === 0.21) {
+    ivaPercentage = 0.105;
+    this.textContent = "10.5%";
+  } else {
+    ivaPercentage = 0.21;
+    this.textContent = "21%";
+  }
+  renderItems();
+};
+
+// MODAL EDIT
+const modal = document.getElementById("editModal");
+const span = document.getElementsByClassName("close")[0];
+span.onclick = function() { modal.style.display = "none"; }
+window.onclick = function(event) { if (event.target == modal) { modal.style.display = "none"; } }
+document.getElementById("cancelEdit").onclick = function() { modal.style.display = "none"; };
+document.getElementById("saveEdit").onclick = function() {
+  const cant = parseInt(document.getElementById("editCant").value);
+  const desc = document.getElementById("editDesc").value.trim();
+  const tipo = document.getElementById("editTipo").value;
+  const unit = parseFloat(document.getElementById("editUnit").value);
+  if (!desc || isNaN(cant) || isNaN(unit) || cant<=0 || unit<=0) {
+    alert("Complete todos los campos correctamente.");
+    return;
+  }
+  items[editingIndex] = {cant, desc, tipo, unit};
+  renderItems();
+  modal.style.display = "none";
+};
+
+// PDF y Excel
+function checkLibraries() {
+  if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+    alert("Error: La librería para generar PDF (jsPDF) no se cargó correctamente.");
+    return false;
+  }
+  if (typeof window.XLSX === 'undefined') {
+    alert("Error: La librería para generar Excel (XLSX) no se cargó correctamente.");
+    return false;
+  }
+  return true;
+}
+
+document.getElementById("exportPDF").onclick = () => { if(checkLibraries() && items.length > 0) generatePDF(); else if(items.length === 0) alert("¡Agrega al menos un ítem para exportar!"); };
+document.getElementById("sharePDF").onclick = () => { if(checkLibraries() && items.length > 0) generatePDF(true); else if(items.length === 0) alert("¡Agrega al menos un ítem para compartir!"); };
+
+async function generatePDF(share = false) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF("p", "mm", "a4");
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = 20;
+  const clientName = document.getElementById("razon").value.trim() || "Cliente";
+  const filename = `Presupuesto ${budgetId} - ${clientName}.pdf`.replace(/[/\\?%*:|"<>]/g, '-')
+
+  if(logoImageData){
+    try{ doc.addImage(logoImageData, "PNG", pageWidth-60, 10, 50, 25); }catch(e){}
+  } else {
+    doc.setFontSize(16); doc.setTextColor(14, 98, 176); doc.text("EMPRESA DEMO S.R.L.", 20, y);
+    doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text("Servicios y soluciones industriales", 20, y+5);
+    y += 10;
+  }
+  
+  doc.setFontSize(24); doc.setTextColor(14, 98, 176); doc.text(`PRESUPUESTO N° ${budgetId}`, 20, y);
+  y+=10;
+
+  doc.setFontSize(10); doc.setTextColor(0,0,0);
+  doc.text("Fecha: " + document.getElementById("fechaEmitida").textContent, 20, y); y+=7;
+  doc.text("Razón social: " + document.getElementById("razon").value, 20, y);
+  doc.text("CUIT: " + document.getElementById("cuit").value, 100, y); y+=7;
+  doc.text("Dirección: " + document.getElementById("direccion").value, 20, y);
+  doc.text("Contacto: " + document.getElementById("contacto").value, 100, y); y+=7;
+  doc.text("Teléfono: " + document.getElementById("telefono").value, 20, y);
+  doc.text("Email: " + document.getElementById("mail").value, 100, y); y+=7;
+  doc.text("Usuario: " + document.getElementById("usuario").value, 20, y);
+
+  y+=14;
+  doc.setFontSize(13); doc.setTextColor(14, 98, 176); doc.text("PROPUESTA TÉCNICA", 20, y); y+=7;
+  doc.setFontSize(10); doc.setTextColor(0,0,0);
+  
+  const splitText = (text, maxWidth) => doc.splitTextToSize(text, maxWidth);
+  const addTextField = (label, elementId, currentY) => {
+    const text = document.getElementById(elementId).innerText;
+    const lines = splitText(`${label}: ${text}`, 170);
+    lines.forEach(line => { doc.text(line, 20, currentY); currentY += 5; });
+    return currentY;
+  };
+  y = addTextField("Descripción", "descArea", y);
+  y = addTextField("Diagnóstico", "diagArea", y);
+  y = addTextField("Tareas", "tareasArea", y);
+  y = addTextField("Notas", "notasArea", y);
+  
+  y += 10;
+  doc.setFontSize(13); doc.setTextColor(14, 98, 176); doc.text("PROPUESTA ECONÓMICA", 20, y); y+=2;
+  
+  doc.autoTable({
+    head:[["Cant.","Descripción","Tipo","Unitario","Subtotal"]],
+    body: items.map(it=>[it.cant, it.desc, it.tipo, fmt(it.unit, currentCurrency), fmt(it.cant*it.unit, currentCurrency)]),
+    startY: y+4, margin:{left:20, right:20}, styles:{fontSize:9, cellPadding:2}, theme:"grid",
+    headStyles:{fillColor:[232,244,255],textColor:[14,98,176]},
+    columnStyles:{0:{halign:'center'},3:{halign:'right'},4:{halign:'right'}}
+  });
+  let f = doc.lastAutoTable.finalY || (y+30);
+
+  doc.setFontSize(11); doc.setTextColor(0,0,0);
+  let subtotal = items.reduce((a, b) => a + b.cant * b.unit, 0);
+  let discountAmount = subtotal * (discountPercentage / 100);
+  let subtotalWithDiscount = subtotal - discountAmount;
+  let iva = subtotalWithDiscount * ivaPercentage;
+  let total = subtotalWithDiscount + iva;
+  
+  doc.text(`Subtotal: ${fmt(subtotal, currentCurrency)}`, 120, f+10);
+  doc.text(`Descuento (${discountPercentage}%): ${fmt(discountAmount, currentCurrency)}`, 120, f+16);
+  doc.text(`Subtotal con descuento: ${fmt(subtotalWithDiscount, currentCurrency)}`, 120, f+22);
+  doc.text(`IVA (${(ivaPercentage*100).toFixed(1)}%): ${fmt(iva, currentCurrency)}`, 120, f+28);
+  doc.setFontSize(12); doc.setTextColor(14, 98, 176); doc.text(`TOTAL: ${fmt(total, currentCurrency)}`, 120, f+34);
+
+  f+=40;
+  const addSection = (title, elementId, currentY) => {
+    doc.setFontSize(12); doc.setTextColor(14, 98, 176); doc.text(title, 20, currentY);
+    doc.setFontSize(10); doc.setTextColor(0,0,0);
+    const lines = splitText(document.getElementById(elementId).innerText, 170);
+    lines.forEach(line => { doc.text(line, 20, currentY+6); currentY += 5; });
+    return currentY + 12;
+  };
+  f = addSection("PLAZOS DE ENTREGA", "deliveryTerms", f);
+  f = addSection("CONDICIÓN DE PAGO", "paymentTerms", f);
+  addSection("NOTAS ADICIONALES", "notes", f);
+
+  if (share) {
     try {
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-        return true;
-    } catch(e) {
-        showNotification('Error: El navegador no permite almacenamiento local. Algunas funciones no estarán disponibles.', 'error');
-        return false;
-    }
-  }
-
-  // Función para descargar archivos
-  function downloadFile(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    
-    if (navigator.msSaveBlob) {
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-    }
-  }
-
-  // Estado
-  let items = [];      // {cant, desc, tipo, unit}
-  let descPct = 0;     // descuento porcentaje
-  let ivaPct = 21;     // IVA seleccionado
-  let currentBudgetNumber = 1;
-  let savedBudgets = [];
-  let itemHistory = [];
-  let currentCurrency = 'ARS'; // Moneda actual
-  let localStorageAvailable = checkLocalStorage();
-  
-  // NUEVO: Variable para almacenar la imagen institucional
-  let logoImage = null;
-
-  // Cargar datos desde localStorage si está disponible
-  if (localStorageAvailable) {
-    savedBudgets = JSON.parse(localStorage.getItem('savedBudgets') || '[]');
-    itemHistory = JSON.parse(localStorage.getItem('itemHistory') || '[]');
-    
-    // Cargar moneda guardada
-    const savedCurrency = localStorage.getItem('currency');
-    if (savedCurrency && ['ARS', 'USD'].includes(savedCurrency)) {
-      currentCurrency = savedCurrency;
-      $('#currencySelect').value = currentCurrency;
-    }
-  }
-
-  // Fecha clara
-  function setFechaEmitida(){
-    $('#fechaEmitida').textContent = new Date().toLocaleDateString('es-AR');
-  }
-
-  // ID (simple para demo, con incremento al guardar si luego agregas persistencia)
-  function setBudgetId(n){ 
-    currentBudgetNumber = n;
-    $('#budgetId').textContent = '#' + String(n).padStart(3,'0');
-    $('#budgetNumberText').textContent = String(n).padStart(3,'0');
-  }
-  setBudgetId(1);
-
-  // Cambio de moneda
-  $('#currencySelect').addEventListener('change', (e) => {
-    currentCurrency = e.target.value;
-    
-    // Guardar en localStorage
-    if (localStorageAvailable) {
-      localStorage.setItem('currency', currentCurrency);
-    }
-    
-    // Actualizar todos los montos mostrados
-    renderItems();
-    computeTotals();
-    
-    showNotification(`Moneda cambiada a ${currentCurrency === 'ARS' ? 'Pesos Argentinos' : 'Dólares Estadounidenses'}`);
-  });
-
-  // Usuario editable
-  function aplicarUsuario(){ $('#userDisplay').textContent = $('#usuario').value.trim() || '—'; }
-  $('#aplicarUsuario').addEventListener('click', aplicarUsuario);
-  $('#usuario').addEventListener('input', aplicarUsuario);
-
-  // Propuesta técnica: toggles y borrar texto
-  const toggleMap = { desc: '#descBox', diag: '#diagBox', tareas: '#tareasBox', notas: '#notasBox' };
-  $$('.actions [data-toggle]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const key = btn.getAttribute('data-toggle');
-      const box = document.querySelector(toggleMap[key]);
-      box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
-    });
-  });
-  $$('.small-actions [data-clear]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const id = btn.getAttribute('data-clear');
-      const area = document.getElementById(id);
-      if (area) area.innerHTML = '';
-    });
-  });
-
-  // Actualizar lista de sugerencias
-  function updateItemSuggestions() {
-    if (!localStorageAvailable) return;
-    
-    const datalist = $('#itemSuggestions');
-    datalist.innerHTML = '';
-    
-    // Obtener descripciones únicas
-    const uniqueDescriptions = [...new Set(itemHistory.map(item => item.desc))];
-    
-    uniqueDescriptions.forEach(desc => {
-      const option = document.createElement('option');
-      option.value = desc;
-      datalist.appendChild(option);
-    });
-  }
-
-  // Propuesta económica
-  function renderItems(){
-    const tbody = $('#itemsBody'); tbody.innerHTML = '';
-    let subtotal = 0;
-    items.forEach((it, idx)=>{
-      const sub = it.cant * it.unit; subtotal += sub;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${it.cant}</td>
-        <td>${it.desc}</td>
-        <td>${it.tipo}</td>
-        <td class="right">${fmt(it.unit, currentCurrency)}</td>
-        <td class="right">${fmt(sub, currentCurrency)}</td>
-        <td>
-          <button class="btn" data-edit="${idx}">Editar</button>
-          <button class="btn btn-danger" data-del="${idx}">Eliminar</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-    $('#subtotal').textContent = fmt(subtotal, currentCurrency);
-    computeTotals();
-  }
-
-  function addItem(){
-    const cant = parseInt($('#itemCant').value, 10);
-    const desc = $('#itemDesc').value.trim();
-    const tipo = $('#itemTipo').value;
-    const unit = parseNum($('#itemUnit').value);
-    if (!desc || !['bien','servicio'].includes(tipo) || isNaN(cant) || cant<=0 || unit<=0){
-      showNotification('Completa Cantidad, Descripción, Tipo y Unitario válidos.', 'error');
-      return;
-    }
-    items.push({ cant, desc, tipo, unit });
-    
-    // Agregar al historial de ítems
-    if (localStorageAvailable) {
-      const existingIndex = itemHistory.findIndex(item => item.desc === desc && item.tipo === tipo);
-      if (existingIndex >= 0) {
-        itemHistory[existingIndex] = { cant, desc, tipo, unit };
-      } else {
-        itemHistory.push({ cant, desc, tipo, unit });
+      const pdfBlob = doc.output('blob');
+      const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Presupuesto ${budgetId}`, text: 'Adjunto presupuesto' });
+        return;
       }
-      localStorage.setItem('itemHistory', JSON.stringify(itemHistory));
-      updateItemSuggestions();
+      window.open(URL.createObjectURL(pdfBlob), '_blank');
+    } catch (err) {
+      console.error('Error share PDF:', err);
+      doc.save(filename);
     }
-    
-    // limpiar inputs
-    $('#itemCant').value=''; $('#itemDesc').value=''; $('#itemUnit').value='';
-    renderItems();
-    showNotification('Ítem agregado correctamente');
+  } else {
+    doc.save(filename);
   }
-  $('#btnAdd').addEventListener('click', addItem);
+}
 
-  // Acciones editar/eliminar
-  $('#itemsBody').addEventListener('click', (e)=>{
-    const edit = e.target.getAttribute('data-edit');
-    const del = e.target.getAttribute('data-del');
-    if (edit !== null){
-      const i = Number(edit); 
-      const it = items[i];
-      
-      // Crear formulario de edición
-      const editForm = document.createElement('div');
-      editForm.className = 'card';
-      editForm.style.position = 'fixed';
-      editForm.style.top = '50%';
-      editForm.style.left = '50%';
-      editForm.style.transform = 'translate(-50%, -50%)';
-      editForm.style.zIndex = '1000';
-      editForm.style.width = '90%';
-      editForm.style.maxWidth = '500px';
-      editForm.innerHTML = `
-        <h2>Editar Ítem</h2>
-        <label>Cantidad</label>
-        <input type="number" id="editCant" value="${it.cant}" min="1">
-        <label>Descripción</label>
-        <input type="text" id="editDesc" value="${it.desc}">
-        <label>Tipo</label>
-        <select id="editTipo">
-          <option value="bien" ${it.tipo === 'bien' ? 'selected' : ''}>Bien</option>
-          <option value="servicio" ${it.tipo === 'servicio' ? 'selected' : ''}>Servicio</option>
-        </select>
-        <label>Precio Unitario (${currentCurrency})</label>
-        <input type="number" id="editUnit" value="${it.unit}" step="0.01" min="0">
-        <div class="actions">
-          <button class="btn btn-primary" id="saveEdit">Guardar</button>
-          <button class="btn" id="cancelEdit">Cancelar</button>
-        </div>
-      `;
-      
-      document.body.appendChild(editForm);
-      
-      // Eventos del formulario
-      $('#saveEdit').addEventListener('click', () => {
-        const cant = parseInt($('#editCant').value, 10);
-        const desc = $('#editDesc').value.trim();
-        const tipo = $('#editTipo').value;
-        const unit = parseNum($('#editUnit').value);
-        
-        if (!desc || !['bien','servicio'].includes(tipo) || isNaN(cant) || cant<=0 || unit<=0){ 
-          showNotification('Valores inválidos.', 'error'); 
-          return; 
-        }
-        
-        items[i] = { cant, desc: desc.trim(), tipo, unit };
-        
-        // Actualizar historial
-        if (localStorageAvailable) {
-          const existingIndex = itemHistory.findIndex(item => item.desc === desc && item.tipo === tipo);
-          if (existingIndex >= 0) {
-            itemHistory[existingIndex] = { cant, desc, tipo, unit };
-          } else {
-            itemHistory.push({ cant, desc, tipo, unit });
-          }
-          localStorage.setItem('itemHistory', JSON.stringify(itemHistory));
-          updateItemSuggestions();
-        }
-        
-        renderItems();
-        document.body.removeChild(editForm);
-        showNotification('Ítem actualizado correctamente');
-      });
-      
-      $('#cancelEdit').addEventListener('click', () => {
-        document.body.removeChild(editForm);
-      });
+document.getElementById("exportExcel").onclick = () => { if(checkLibraries() && items.length > 0) generateExcel(); else if(items.length === 0) alert("¡Agrega al menos un ítem para exportar!"); };
+document.getElementById("shareExcel").onclick = () => { if(checkLibraries() && items.length > 0) generateExcel(true); else if(items.length === 0) alert("¡Agrega al menos un ítem para compartir!"); };
+
+async function generateExcel(share = false) {
+  const wb = XLSX.utils.book_new();
+  const clientName = document.getElementById("razon").value.trim() || "Cliente";
+  const filename = `Presupuesto ${budgetId} - ${clientName}.xlsx`.replace(/[/\\?%*:|"<>]/g, '-')
+  
+  const clientData = [
+    ["Presupuesto N°", budgetId], ["Razón social", document.getElementById("razon").value], ["CUIT", document.getElementById("cuit").value],
+    ["Dirección", document.getElementById("direccion").value], ["Contacto", document.getElementById("contacto").value],
+    ["Teléfono", document.getElementById("telefono").value], ["Email", document.getElementById("mail").value],
+    ["Usuario", document.getElementById("usuario").value], ["Fecha", document.getElementById("fechaEmitida").textContent]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clientData), "Datos del Cliente");
+  
+  const itemsData = [["Cantidad", "Descripción", "Tipo", "Precio Unitario", "Subtotal"]];
+  let subtotal = 0;
+  items.forEach(item => { const sub = item.cant * item.unit; subtotal += sub; itemsData.push([item.cant, item.desc, item.tipo, item.unit, sub]); });
+  const discountAmount = subtotal * (discountPercentage / 100);
+  const subtotalWithDiscount = subtotal - discountAmount;
+  const iva = subtotalWithDiscount * ivaPercentage;
+  const total = subtotalWithDiscount + iva;
+  itemsData.push([], ["Subtotal", "", "", "", subtotal], ["Descuento", `${discountPercentage}%`, "", "", discountAmount],
+    ["Subtotal con descuento", "", "", "", subtotalWithDiscount], ["IVA", `${(ivaPercentage*100).toFixed(1)}%`, "", "", iva], ["TOTAL", "", "", "", total]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(itemsData), "Propuesta Económica");
+  
+  const technicalData = [
+    ["Descripción", document.getElementById("descArea").innerText], ["Diagnóstico", document.getElementById("diagArea").innerText],
+    ["Tareas", document.getElementById("tareasArea").innerText], ["Notas", document.getElementById("notasArea").innerText]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(technicalData), "Propuesta Técnica");
+  
+  const additionalData = [
+    ["Plazos de Entrega", document.getElementById("deliveryTerms").innerText], ["Condición de Pago", document.getElementById("paymentTerms").innerText],
+    ["Notas Adicionales", document.getElementById("notes").innerText]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(additionalData), "Información Adicional");
+  
+  if (share) {
+    try {
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const excelBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const file = new File([excelBlob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Presupuesto ${budgetId}`, text: 'Adjunto presupuesto (Excel)' });
+        return;
+      }
+      window.open(URL.createObjectURL(excelBlob), '_blank');
+    } catch (err) {
+      console.error('Error share Excel:', err);
+      XLSX.writeFile(wb, filename);
     }
-    if (del !== null){
-      const i = Number(del);
-      items.splice(i,1);
-      renderItems();
-      showNotification('Ítem eliminado correctamente');
-    }
-  });
-
-  // IVA selector por select - MEJORADO
-  $('#ivaSelect').addEventListener('change', () => {
-    ivaPct = parseFloat($('#ivaSelect').value);
-    $('#ivaPctView').textContent = `(${ivaPct}%)`; // Actualizar visualización
-    computeTotals(); // Actualizar cálculos inmediatamente
-    showNotification(`IVA actualizado a ${ivaPct}%`);
-  });
-
-  // Descuento/Bonificación
-  $('#applyDesc').addEventListener('click', ()=>{
-    descPct = Math.max(0, parseNum($('#descPct').value));
-    computeTotals();
-    showNotification(`Descuento del ${descPct}% aplicado`);
-  });
-
-  // Cálculo de totales - CORREGIDO: El descuento resta del subtotal
-  function computeTotals(){
-    const subtotal = items.reduce((acc,it)=> acc + it.cant*it.unit, 0);
-    const prenda = 0; // fija en 0 por ahora
-    const descuento = subtotal * (descPct/100); // descuento (resta)
-    const baseIva = subtotal - descuento + prenda; // restamos el descuento
-    const iva = baseIva * (ivaPct/100);
-    const total = baseIva + iva;
-
-    $('#prendaVal').textContent = fmt(prenda, currentCurrency);
-    $('#descVal').textContent = fmt(descuento, currentCurrency);
-    $('#ivaVal').textContent = fmt(iva, currentCurrency);
-    $('#totalVal').textContent = fmt(total, currentCurrency);
-    $('#budgetTotalText').textContent = fmt(total, currentCurrency);
+  } else {
+    XLSX.writeFile(wb, filename);
   }
+}
 
-  // Cerrar presupuesto - MEJORADO
-  $('#closeBudget').addEventListener('click', () => {
-    if (!$('#razon').value.trim()) {
-      showNotification('Debes ingresar la razón social del cliente', 'error');
-      return;
-    }
-    
-    if (items.length === 0) {
-      showNotification('Debes agregar al menos un ítem al presupuesto', 'error');
-      return;
-    }
-    
-    if (confirm('¿Está seguro que desea cerrar este presupuesto? Se incrementará el número de presupuesto.')) {
-      // Asegurarse de que los totales estén calculados
-      computeTotals();
-      
-      // Guardar datos del presupuesto actual
-      const budgetData = {
-        budgetNumber: currentBudgetNumber,
-        date: new Date().toISOString(),
+function saveState() {
+    return {
+        id: budgetId,
+        items: JSON.parse(JSON.stringify(items)),
         currency: currentCurrency,
-        clientData: {
-          razon: $('#razon').value,
-          cuit: $('#cuit').value,
-          direccion: $('#direccion').value,
-          contacto: $('#contacto').value,
-          telefono: $('#telefono').value,
-          mail: $('#mail').value
+        logo: logoImageData,
+        discount: discountPercentage,
+        iva: ivaPercentage,
+        client: {
+            razon: document.getElementById("razon").value,
+            cuit: document.getElementById("cuit").value,
+            direccion: document.getElementById("direccion").value,
+            contacto: document.getElementById("contacto").value,
+            telefono: document.getElementById("telefono").value,
+            mail: document.getElementById("mail").value,
+            usuario: document.getElementById("usuario").value,
         },
-        proposal: {
-          desc: $('#descArea').innerHTML,
-          diag: $('#diagArea').innerHTML,
-          tareas: $('#tareasArea').innerHTML,
-          notas: $('#notasArea').innerHTML
-        },
-        items: items,
-        deliveryTerms: $('#deliveryTerms').innerHTML,
-        paymentTerms: $('#paymentTerms').innerHTML,
-        notes: $('#notes').innerHTML,
-        subtotal: parseNum($('#subtotal').textContent),
-        discount: parseNum($('#descVal').textContent),
-        prenda: parseNum($('#prendaVal').textContent),
-        iva: parseNum($('#ivaVal').textContent),
-        total: parseNum($('#totalVal').textContent),
-        ivaPercentage: ivaPct
-      };
-      
-      // Guardar en localStorage si está disponible
-      if (localStorageAvailable) {
-        savedBudgets.push(budgetData);
-        localStorage.setItem('savedBudgets', JSON.stringify(savedBudgets));
-      }
-      
-      // Incrementar número de presupuesto
-      setBudgetId(currentBudgetNumber + 1);
-      
-      // Limpiar formulario
-      clearForm();
-      
-      showNotification('Presupuesto cerrado exitosamente. Número de presupuesto incrementado.');
-    }
-  });
-
-  // Exportar a Excel - MEJORADO
-  $('#exportExcel').addEventListener('click', () => {
-    if (items.length === 0) {
-      showNotification('No hay ítems para exportar', 'warning');
-      return;
-    }
-    
-    try {
-      // Verificar que la librería XLSX esté disponible
-      if (typeof XLSX === 'undefined') {
-        showNotification('Error: Librería XLSX no disponible. Verifique su conexión a internet.', 'error');
-        return;
-      }
-      
-      // Crear un libro de trabajo
-      const wb = XLSX.utils.book_new();
-      
-      // Datos del presupuesto
-      const presupuestoData = [
-        ['Presupuesto N°', currentBudgetNumber],
-        ['Moneda', currentCurrency],
-        ['Fecha', $('#fechaEmitida').textContent],
-        ['Cliente', $('#razon').value],
-        ['CUIT', $('#cuit').value],
-        ['Dirección', $('#direccion').value],
-        ['Contacto', $('#contacto').value],
-        ['Teléfono', $('#telefono').value],
-        ['Email', $('#mail').value],
-        ['Usuario', $('#userDisplay').textContent],
-        [],
-        ['Propuesta Técnica'],
-        ['Descripción', $('#descArea').innerText],
-        ['Diagnóstico', $('#diagArea').innerText],
-        ['Tareas', $('#tareasArea').innerText],
-        ['Notas', $('#notasArea').innerText],
-        [],
-        ['Propuesta Económica'],
-        ['Cant.', 'Descripción', 'Tipo', `Unitario (${currentCurrency})`, `Subtotal (${currentCurrency})`]
-      ];
-      
-      // Agregar ítems
-      items.forEach(item => {
-        presupuestoData.push([
-          item.cant,
-          item.desc,
-          item.tipo,
-          item.unit.toFixed(2),
-          (item.cant * item.unit).toFixed(2)
-        ]);
-      });
-      
-      // Agregar totales
-      presupuestoData.push(
-        [],
-        ['Subtotal', '', '', '', $('#subtotal').textContent],
-        ['Descuento', '', '', '', $('#descVal').textContent],
-        ['Prenda', '', '', '', $('#prendaVal').textContent],
-        ['IVA', '', '', '', $('#ivaVal').textContent],
-        ['TOTAL', '', '', '', $('#totalVal').textContent]
-      );
-      
-      // Agregar apartados adicionales
-      presupuestoData.push(
-        [],
-        ['Plazos de Entrega'],
-        [$('#deliveryTerms').innerText],
-        [],
-        ['Condición de Pago'],
-        [$('#paymentTerms').innerText],
-        [],
-        ['Notas Adicionales'],
-        [$('#notes').innerText]
-      );
-      
-      // Crear hoja de cálculo
-      const ws = XLSX.utils.aoa_to_sheet(presupuestoData);
-      XLSX.utils.book_append_sheet(wb, ws, "Presupuesto");
-      
-      // Guardar el archivo
-      const blob = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      downloadFile(new Blob([blob]), `Presupuesto_${currentBudgetNumber}_${currentCurrency}.xlsx`);
-      showNotification('Presupuesto exportado a Excel correctamente');
-    } catch (error) {
-      showNotification('Error al exportar a Excel. Intente nuevamente.', 'error');
-      console.error('Error exportando Excel:', error);
-    }
-  });
-
-  // Exportar a PDF - MEJORADO CON IMAGEN
-  $('#exportPDF').addEventListener('click', () => {
-    if (items.length === 0) {
-      showNotification('No hay ítems para exportar', 'warning');
-      return;
-    }
-    
-    try {
-      // Verificar que las librerías PDF estén disponibles
-      if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
-        showNotification('Error: Librerías PDF no disponibles. Verifique su conexión a internet.', 'error');
-        return;
-      }
-      
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Configuración de fuentes
-      doc.setFont('helvetica');
-      
-      // NUEVO: Agregar imagen institucional al encabezado
-      if (logoImage) {
-        doc.addImage(logoImage, 'PNG', 15, 10, 50, 20); // (x, y, ancho, alto)
-      }
-      
-      // Función para verificar si necesitamos agregar una nueva página
-      function checkPageSpace(yPosition, requiredSpace = 20) {
-        const pageHeight = doc.internal.pageSize.height;
-        const margin = 20; // Margen inferior
-        
-        if (yPosition + requiredSpace > pageHeight - margin) {
-          doc.addPage();
-          return 20; // Nueva posición inicial en la nueva página
+        sections: {
+            desc: document.getElementById("descArea").innerHTML,
+            diag: document.getElementById("diagArea").innerHTML,
+            tareas: document.getElementById("tareasArea").innerHTML,
+            notas: document.getElementById("notasArea").innerHTML,
+            delivery: document.getElementById("deliveryTerms").innerHTML,
+            payment: document.getElementById("paymentTerms").innerHTML,
+            notes: document.getElementById("notes").innerHTML,
         }
-        return yPosition;
-      }
-      
-      // Título
-      doc.setFontSize(20);
-      doc.text('PRESUPUESTO', 105, 45, { align: 'center' }); // Ajustado para dejar espacio para la imagen
-      
-      // Datos de la empresa
-      doc.setFontSize(16);
-      doc.setTextColor(14, 98, 176); // Color azul #0e62b0
-      doc.text('HIDRÁULICA ENSENADA', 105, 55, { align: 'center' });
-      doc.setFontSize(12);
-      doc.setTextColor(102, 102, 102); // Color gris #666666
-      doc.text('Conexiones Hidráulicas y Neumáticas', 105, 62, { align: 'center' });
-      doc.setTextColor(0, 0, 0); // Restaurar color negro
-      
-      // Datos del presupuesto
-      doc.setFontSize(12);
-      let yPosition = 75; // Ajustado para dejar espacio después de los datos de la empresa
-      
-      // Verificar espacio para los datos del presupuesto
-      yPosition = checkPageSpace(yPosition, 120); // Espacio necesario para los datos del presupuesto
-      
-      doc.text(`Presupuesto N°: ${currentBudgetNumber}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Moneda: ${currentCurrency}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Fecha: ${$('#fechaEmitida').textContent}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Cliente: ${$('#razon').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`CUIT: ${$('#cuit').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Dirección: ${$('#direccion').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Contacto: ${$('#contacto').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Teléfono: ${$('#telefono').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Email: ${$('#mail').value}`, 20, yPosition);
-      yPosition += 10;
-      doc.text(`Usuario: ${$('#userDisplay').textContent}`, 20, yPosition);
-      
-      // Propuesta técnica
-      yPosition += 20;
-      yPosition = checkPageSpace(yPosition, 20);
-      
-      doc.setFontSize(14);
-      doc.text('Propuesta Técnica', 20, yPosition);
-      yPosition += 10;
-      doc.setFontSize(12);
-      
-      if ($('#descArea').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Descripción:', 20, yPosition);
-        yPosition += 5;
-        const descLines = doc.splitTextToSize($('#descArea').innerText, 170);
-        yPosition = checkPageSpace(yPosition, descLines.length * 5);
-        doc.text(descLines, 20, yPosition);
-        yPosition += descLines.length * 5 + 5;
-      }
-      
-      if ($('#diagArea').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Diagnóstico:', 20, yPosition);
-        yPosition += 5;
-        const diagLines = doc.splitTextToSize($('#diagArea').innerText, 170);
-        yPosition = checkPageSpace(yPosition, diagLines.length * 5);
-        doc.text(diagLines, 20, yPosition);
-        yPosition += diagLines.length * 5 + 5;
-      }
-      
-      if ($('#tareasArea').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Tareas:', 20, yPosition);
-        yPosition += 5;
-        const tareasLines = doc.splitTextToSize($('#tareasArea').innerText, 170);
-        yPosition = checkPageSpace(yPosition, tareasLines.length * 5);
-        doc.text(tareasLines, 20, yPosition);
-        yPosition += tareasLines.length * 5 + 5;
-      }
-      
-      if ($('#notasArea').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Notas:', 20, yPosition);
-        yPosition += 5;
-        const notasLines = doc.splitTextToSize($('#notasArea').innerText, 170);
-        yPosition = checkPageSpace(yPosition, notasLines.length * 5);
-        doc.text(notasLines, 20, yPosition);
-        yPosition += notasLines.length * 5 + 5;
-      }
-      
-      // Propuesta económica
-      yPosition += 10;
-      yPosition = checkPageSpace(yPosition, 20);
-      
-      doc.setFontSize(14);
-      doc.text('Propuesta Económica', 20, yPosition);
-      yPosition += 10;
-      
-      // Tabla de ítems
-      const tableData = [];
-      items.forEach(item => {
-        tableData.push([
-          item.cant,
-          item.desc,
-          item.tipo,
-          fmt(item.unit, currentCurrency),
-          fmt(item.cant * item.unit, currentCurrency)
-        ]);
-      });
-      
-      if (typeof doc.autoTable !== 'undefined') {
-        // autoTable maneja automáticamente el salto de página
-        doc.autoTable({
-          head: [['Cant.', 'Descripción', 'Tipo', `Unitario (${currentCurrency})`, `Subtotal (${currentCurrency})`]],
-          body: tableData,
-          startY: yPosition,
-          theme: 'grid',
-          styles: { fontSize: 10 },
-          headStyles: { fillColor: [240, 240, 240] },
-          margin: { top: 10 }
-        });
-        
-        yPosition = doc.lastAutoTable.finalY + 10;
-      } else {
-        // Si autoTable no está disponible, crear tabla manualmente
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Cant.', 20, yPosition);
-        doc.text('Descripción', 40, yPosition);
-        doc.text('Tipo', 120, yPosition);
-        doc.text(`Unitario (${currentCurrency})`, 150, yPosition);
-        doc.text(`Subtotal (${currentCurrency})`, 180, yPosition);
-        yPosition += 10;
-        
-        tableData.forEach(row => {
-          yPosition = checkPageSpace(yPosition, 10);
-          doc.text(row[0].toString(), 20, yPosition);
-          doc.text(row[1], 40, yPosition);
-          doc.text(row[2], 120, yPosition);
-          doc.text(row[3], 150, yPosition);
-          doc.text(row[4], 180, yPosition);
-          yPosition += 10;
-        });
-      }
-      
-      // Totales
-      yPosition = checkPageSpace(yPosition, 60);
-      doc.text(`Subtotal: ${$('#subtotal').textContent}`, 140, yPosition);
-      yPosition += 10;
-      doc.text(`Descuento: ${$('#descVal').textContent}`, 140, yPosition);
-      yPosition += 10;
-      doc.text(`Prenda: ${$('#prendaVal').textContent}`, 140, yPosition);
-      yPosition += 10;
-      doc.text(`IVA: ${$('#ivaVal').textContent}`, 140, yPosition);
-      yPosition += 10;
-      doc.setFontSize(14);
-      doc.text(`TOTAL: ${$('#totalVal').textContent}`, 140, yPosition);
-      doc.setFontSize(12);
-      
-      // Apartados adicionales
-      yPosition += 20;
-      yPosition = checkPageSpace(yPosition, 20);
-      
-      if ($('#deliveryTerms').innerText.trim()) {
-        doc.text('Plazos de Entrega:', 20, yPosition);
-        yPosition += 5;
-        const deliveryLines = doc.splitTextToSize($('#deliveryTerms').innerText, 170);
-        yPosition = checkPageSpace(yPosition, deliveryLines.length * 5);
-        doc.text(deliveryLines, 20, yPosition);
-        yPosition += deliveryLines.length * 5 + 5;
-      }
-      
-      if ($('#paymentTerms').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Condición de Pago:', 20, yPosition);
-        yPosition += 5;
-        const paymentLines = doc.splitTextToSize($('#paymentTerms').innerText, 170);
-        yPosition = checkPageSpace(yPosition, paymentLines.length * 5);
-        doc.text(paymentLines, 20, yPosition);
-        yPosition += paymentLines.length * 5 + 5;
-      }
-      
-      if ($('#notes').innerText.trim()) {
-        yPosition = checkPageSpace(yPosition, 20);
-        doc.text('Notas Adicionales:', 20, yPosition);
-        yPosition += 5;
-        const notesLines = doc.splitTextToSize($('#notes').innerText, 170);
-        yPosition = checkPageSpace(yPosition, notesLines.length * 5);
-        doc.text(notesLines, 20, yPosition);
-        yPosition += notesLines.length * 5 + 5;
-      }
-      
-      // Guardar el PDF
-      doc.save(`Presupuesto_${currentBudgetNumber}_${currentCurrency}.pdf`);
-      showNotification('Presupuesto exportado a PDF correctamente');
-    } catch (error) {
-      showNotification('Error al exportar a PDF. Intente nuevamente.', 'error');
-      console.error('Error exportando PDF:', error);
-    }
-  });
+    };
+}
 
-  // Compartir por WhatsApp - MEJORADO
-  $('#shareWhatsApp').addEventListener('click', () => {
-    try {
-      const total = $('#totalVal').textContent;
-      const client = $('#razon').value || 'Cliente';
-      const message = `Presupuesto N°${String(currentBudgetNumber).padStart(3,'0')} (${currentCurrency}) para ${client}. Total: ${total}.`;
-      
-      // Método más compatible
-      const whatsappWebUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-      const whatsappAppUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
-      
-      // Intentar abrir la app móvil primero
-      window.open(whatsappAppUrl, '_blank');
-      
-      // Si no funciona, mostrar un enlace
-      setTimeout(() => {
-        const link = document.createElement('a');
-        link.href = whatsappWebUrl;
-        link.target = '_blank';
-        link.textContent = 'Abrir WhatsApp Web';
-        link.style.display = 'block';
-        link.style.marginTop = '10px';
-        link.style.padding = '10px';
-        link.style.backgroundColor = '#25D366';
-        link.style.color = 'white';
-        link.style.textAlign = 'center';
-        link.style.borderRadius = '5px';
-        link.style.textDecoration = 'none';
-        
-        // Insertar después del botón
-        $('#shareWhatsApp').parentNode.insertBefore(link, $('#shareWhatsApp').nextSibling);
-        
-        // Eliminar el enlace después de 10 segundos
-        setTimeout(() => {
-          if (link.parentNode) {
-            link.parentNode.removeChild(link);
-          }
-        }, 10000);
-      }, 500);
-      
-      showNotification('Enlace de WhatsApp generado');
-    } catch (error) {
-      showNotification('Error al generar enlace de WhatsApp', 'error');
-      console.error('Error compartiendo WhatsApp:', error);
-    }
-  });
+function loadState(state) {
+    budgetId = state.id;
+    budgetIdEl.textContent = budgetId;
+    items = JSON.parse(JSON.stringify(state.items));
+    currentCurrency = state.currency;
+    document.getElementById("currencySelect").value = currentCurrency;
+    logoImageData = state.logo;
+    displayLogo();
+    discountPercentage = state.discount;
+    document.getElementById("discountPercent").value = discountPercentage;
+    ivaPercentage = state.iva;
+    document.getElementById("toggleIva").textContent = ivaPercentage === 0.21 ? "21%" : "10.5%";
 
-  // Ver presupuestos guardados - MEJORADO
-  $('#viewBudgets').addEventListener('click', () => {
-    try {
-      const modal = $('#budgetsModal');
-      const budgetsList = $('#budgetsList');
-      
-      budgetsList.innerHTML = '';
-      
-      if (!localStorageAvailable || savedBudgets.length === 0) {
-        budgetsList.innerHTML = '<p>No hay presupuestos guardados</p>';
-      } else {
-        savedBudgets.forEach((budget, index) => {
-          const budgetItem = document.createElement('div');
-          budgetItem.className = 'card';
-          budgetItem.style.marginBottom = '10px';
-          
-          // Asegurarse de que el total sea un número válido
-          const totalValue = typeof budget.total === 'number' ? budget.total : 0;
-          
-          budgetItem.innerHTML = `
-            <h3>Presupuesto N°${budget.budgetNumber} (${budget.currency}) - ${new Date(budget.date).toLocaleDateString('es-AR')}</h3>
-            <p><strong>Cliente:</strong> ${budget.clientData.razon}</p>
-            <p><strong>Total:</strong> ${fmt(totalValue, budget.currency)}</p>
-            <div class="actions">
-              <button class="btn" data-view-budget="${index}">Ver</button>
-              <button class="btn btn-danger" data-delete-budget="${index}">Eliminar</button>
-            </div>
-          `;
-          budgetsList.appendChild(budgetItem);
-        });
-        
-        // Agregar eventos a los botones
-        $$('[data-view-budget]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const index = btn.getAttribute('data-view-budget');
-            loadBudget(index);
-            modal.style.display = 'none';
-          });
-        });
-        
-        $$('[data-delete-budget]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const index = btn.getAttribute('data-delete-budget');
-            if (confirm('¿Está seguro que desea eliminar este presupuesto?')) {
-              savedBudgets.splice(index, 1);
-              if (localStorageAvailable) {
-                localStorage.setItem('savedBudgets', JSON.stringify(savedBudgets));
-              }
-              $('#viewBudgets').click(); // Recargar la lista
-              showNotification('Presupuesto eliminado correctamente');
-            }
-          });
-        });
-      }
-      
-      modal.style.display = 'block';
-    } catch (error) {
-      showNotification('Error al cargar presupuestos guardados', 'error');
-      console.error('Error cargando presupuestos:', error);
-    }
-  });
+    document.getElementById("razon").value = state.client.razon;
+    document.getElementById("cuit").value = state.client.cuit;
+    document.getElementById("direccion").value = state.client.direccion;
+    document.getElementById("contacto").value = state.client.contacto;
+    document.getElementById("telefono").value = state.client.telefono;
+    document.getElementById("mail").value = state.client.mail;
+    document.getElementById("usuario").value = state.client.usuario;
 
-  // Cerrar modal
-  $('#closeModal').addEventListener('click', () => {
-    $('#budgetsModal').style.display = 'none';
-  });
+    document.getElementById("descArea").innerHTML = state.sections.desc;
+    document.getElementById("diagArea").innerHTML = state.sections.diag;
+    document.getElementById("tareasArea").innerHTML = state.sections.tareas;
+    document.getElementById("notasArea").innerHTML = state.sections.notas;
+    document.getElementById("deliveryTerms").innerHTML = state.sections.delivery;
+    document.getElementById("paymentTerms").innerHTML = state.sections.payment;
+    document.getElementById("notes").innerHTML = state.sections.notes;
 
-  // Cargar presupuesto guardado - MEJORADO
-  function loadBudget(index) {
-    try {
-      const budget = savedBudgets[index];
-      
-      // Cargar moneda
-      currentCurrency = budget.currency;
-      $('#currencySelect').value = currentCurrency;
-      
-      // Cargar datos del cliente
-      $('#razon').value = budget.clientData.razon;
-      $('#cuit').value = budget.clientData.cuit;
-      $('#direccion').value = budget.clientData.direccion;
-      $('#contacto').value = budget.clientData.contacto;
-      $('#telefono').value = budget.clientData.telefono;
-      $('#mail').value = budget.clientData.mail;
-      
-      // Cargar propuesta técnica
-      $('#descArea').innerHTML = budget.proposal.desc;
-      $('#diagArea').innerHTML = budget.proposal.diag;
-      $('#tareasArea').innerHTML = budget.proposal.tareas;
-      $('#notasArea').innerHTML = budget.proposal.notas;
-      
-      // Cargar ítems
-      items = budget.items;
-      renderItems();
-      
-      // Cargar apartados adicionales
-      $('#deliveryTerms').innerHTML = budget.deliveryTerms;
-      $('#paymentTerms').innerHTML = budget.paymentTerms;
-      $('#notes').innerHTML = budget.notes;
-      
-      // Cargar valores económicos
-      descPct = (budget.discount / budget.subtotal) * 100;
-      $('#descPct').value = descPct;
-      ivaPct = budget.ivaPercentage;
-      $('#ivaSelect').value = ivaPct;
-      $('#ivaPctView').textContent = `(${ivaPct}%)`;
-      
-      // Actualizar número de presupuesto
-      setBudgetId(budget.budgetNumber);
-      
-      showNotification('Presupuesto cargado correctamente');
-    } catch (error) {
-      showNotification('Error al cargar presupuesto', 'error');
-      console.error('Error cargando presupuesto:', error);
-    }
-  }
-
-  // Limpiar formulario - MEJORADO
-  function clearForm() {
-    // Limpiar datos del cliente
-    $('#razon').value = '';
-    $('#cuit').value = '';
-    $('#direccion').value = '';
-    $('#contacto').value = '';
-    $('#telefono').value = '';
-    $('#mail').value = '';
-    
-    // Limpiar propuesta técnica
-    $('#descArea').innerHTML = '';
-    $('#diagArea').innerHTML = '';
-    $('#tareasArea').innerHTML = '';
-    $('#notasArea').innerHTML = '';
-    
-    // Limpiar items
-    items = [];
     renderItems();
-    
-    // Limpiar nuevos apartados
-    $('#deliveryTerms').innerHTML = '';
-    $('#paymentTerms').innerHTML = '';
-    $('#notes').innerHTML = '';
-    
-    // Resetear valores económicos
-    descPct = 0;
-    $('#descPct').value = '';
-    ivaPct = 21;
-    $('#ivaSelect').value = ivaPct;
-    $('#ivaPctView').textContent = `(${ivaPct}%)`;
-    
-    computeTotals();
-  }
+}
 
-  // NUEVO: Evento para cargar imagen institucional
-  $('#logoInput').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        logoImage = event.target.result;
-        showNotification('Imagen institucional cargada correctamente');
-      };
-      reader.readAsDataURL(file);
+function resetForm() {
+    items = [];
+    editingIndex = -1;
+    document.getElementById("razon").value = "";
+    document.getElementById("cuit").value = "";
+    document.getElementById("direccion").value = "";
+    document.getElementById("contacto").value = "";
+    document.getElementById("telefono").value = "";
+    document.getElementById("mail").value = "";
+    document.getElementById("usuario").value = "";
+    document.getElementById("descArea").innerHTML = "Descripción del servicio, detalles técnicos, etc.";
+    document.getElementById("diagArea").innerHTML = "Diagnóstico, contexto o análisis previo...";
+    document.getElementById("tareasArea").innerHTML = "Tareas previstas, trabajos a realizar...";
+    document.getElementById("notasArea").innerHTML = "Notas, comentarios adicionales...";
+    document.getElementById("deliveryTerms").innerHTML = "Ej: 15 días hábiles luego de la orden...";
+    document.getElementById("paymentTerms").innerHTML = "Ej: transferencia, 50% anticipo, saldo a entrega...";
+    document.getElementById("notes").innerHTML = "Condiciones, vigencia, etc.";
+    document.getElementById("itemCant").value = "";
+    document.getElementById("itemDesc").value = "";
+    document.getElementById("itemUnit").value = "";
+    document.getElementById("discountPercent").value = 0;
+    discountPercentage = 0;
+    document.getElementById("logoInput").value = "";
+    logoImageData = null;
+    displayLogo();
+    renderItems();
+    setFecha();
+}
+
+document.getElementById("closeBudget").addEventListener("click", function() {
+    if (confirm("¿Está seguro de que desea cerrar este presupuesto y comenzar uno nuevo?")) {
+        lastClosedBudget = saveState();
+        document.getElementById("restoreBudget").style.display = "inline-block";
+        
+        resetForm();
+        
+        budgetId = nextBudgetId;
+        nextBudgetId++;
+        budgetIdEl.textContent = budgetId;
+        
+        alert("Presupuesto cerrado. Puede comenzar el nuevo presupuesto N° " + budgetId);
     }
-  });
+});
 
-  // Init
-  (function init(){
-    setFechaEmitida();
-    updateItemSuggestions();
-    renderItems(); // inicia vacío
-  })();
+document.getElementById("restoreBudget").addEventListener("click", function() {
+    if (lastClosedBudget && confirm("¿Desea recuperar el presupuesto anterior? Se perderán los datos no guardados del presupuesto actual.")) {
+        loadState(lastClosedBudget);
+    }
+});
+
 </script>
-
-<!-- Librerías para exportación -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </body>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlcpxFf7HiIFX34QMABkBIGyz_i7N0lt8",
-    authDomain: "base-a2f85.firebaseapp.com",
-    projectId: "base-a2f85",
-    storageBucket: "base-a2f85.firebasestorage.app",
-    messagingSenderId: "626261131485",
-    appId: "1:626261131485:web:04db4e232f9f6055131b34"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
 </html>

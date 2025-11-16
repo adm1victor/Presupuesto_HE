@@ -1,0 +1,7 @@
+0_la aplicación que te comparto ya funciona y se ve muy bien , solo necesito que implementes estas 3 mejoras que detallo sin alterar lo que ya tenemos que es muy bueno , luego deberás generar todo el código completo para que yo lo pueda copiar y probar ,  mejoras propuestas :  
+1_en el archivo PDF compartido o exportado se bebe borrar la leyenda que dice presupuesto valido por 30 días 
+2_cuando se exportan o comparten archivos el archivo será nombrado con el nombre del cliente.
+3_ se deberá crear un botón para cerrar el presupuesto cuando este se cierre el presupuesto tendrá un numero de id que se ira incrementando a medida que se vayan realizando mas presupuestos.
+
+
+ 

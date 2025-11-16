@@ -1,0 +1,74 @@
+mutation CreateDemoData @transaction @auth(level: PUBLIC, insecureReason: "This operation is for seeding data and is safe to expose to the public") {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      createdAt: "2024-04-01T00:00:00Z",
+      displayName: "demouser1",
+      email: "demouser1@example.com"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      createdAt: "2024-04-01T00:00:00Z",
+      displayName: "demouser2",
+      email: "demouser2@example.com"
+    }
+  ])
+  category_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Food",
+      description: "Groceries and eating out"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Transportation",
+      description: "Gas, bus, and train fares"
+    }
+  ])
+  budget_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      categoryId: "650e8400-e29b-41d4-a716-446655440000",
+      amount: 300.0,
+      startDate: "2024-04-01",
+      endDate: "2024-04-30",
+      name: "April Food Budget"
+    },
+    {
+      id: "750e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      categoryId: "650e8400-e29b-41d4-a716-446655440001",
+      amount: 150.0,
+      startDate: "2024-04-01",
+      endDate: "2024-04-30",
+      name: "April Transportation Budget"
+    }
+  ])
+ transaction_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      categoryId: "650e8400-e29b-41d4-a716-446655440000",
+      amount: 50.0,
+      date: "2024-04-05",
+      description: "Dinner with friends",
+      merchant: "Restaurant ABC",
+      source: "Credit Card",
+      type: "Expense"
+    },
+    {
+      id: "850e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      categoryId: "650e8400-e29b-41d4-a716-446655440001",
+      amount: 25.0,
+      date: "2024-04-05",
+      description: "Gasoline",
+      merchant: "Gas Station XYZ",
+      source: "Debit Card",
+      type: "Expense"
+    }
+  ])
+}
